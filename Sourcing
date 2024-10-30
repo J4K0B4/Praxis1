@@ -1,0 +1,35 @@
+pip install requests pdfkit PyPDF2
+import requests
+from pathlib import Path
+import time
+import pdfkit
+
+def download_batch_1(base_url, offset_step=20, timeout=20, delay=30):
+    Path("./batch_1").mkdir(parents=True, exist_ok=True)
+    for page_num in range(53):  # 53 Seiten für Batch 1
+        offset = page_num * offset_step
+        url = f"{base_url}&offset={offset}"
+        try:
+            response = requests.get(url, timeout=timeout)
+            response.raise_for_status()
+            with open(f"./batch_1/page_{page_num+1}.html", "w", encoding='utf-8') as file:
+                file.write(response.text)
+            print(f"Batch 1: Seite {page_num+1} erfolgreich heruntergeladen.")
+        except requests.exceptions.RequestException as e:
+            print(f"Fehler bei Batch 1, Seite {page_num+1}: {e}")
+        time.sleep(delay)
+
+def convert_batch_1_to_pdf():
+    output_pdf_dir = "./pdf_batch_1"
+    Path(output_pdf_dir).mkdir(parents=True, exist_ok=True)
+    html_files = sorted(Path("./batch_1").glob("*.html"))
+    for html_file in html_files:
+        pdf_file = str(html_file).replace(".html", ".pdf").replace("batch_1", "pdf_batch_1")
+        pdfkit.from_file(str(html_file), pdf_file)
+        print(f"Konvertiert: {html_file} zu PDF")
+
+# Base URL für die Anfrage
+base_url = 'https://www.arztsuche-bw.de/index.php?suchen=1&id_z_arzt_praxis=0&id_fachgruppe=415&id_zusatzbezeichnung=0&id_genehmigung=0&id_dmp=0&id_zusatzvertraege=0&id_sprache=0&vorname=&nachname=&arztgruppe=hausarzt&geschlecht=alle&wochentag=alle&zeiten=alle&fa_name=&plz=&ort=&strasse=&schluesselnr=&schluesseltyp=lanr7&landkreis=&id_leistungsort_art=0&id_praxis_zusatz=&sorting=name&direction=ASC&checkbox_content=&name_schnellsuche=&fachgebiet_schnellsuche='
+
+download_batch_1(base_url)
+convert_batch_1_to_pdf()
